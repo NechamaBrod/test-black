@@ -1,126 +1,127 @@
-import React, { useContext, useRef, useState } from "react";
+import { useContext } from "react";
 import { Box, Button, TextField, Typography, Alert } from "@mui/material";
 import { UserContext } from "../user/userReducer";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState, AppDispatch } from "../../store/store";
+import { addRecipe, clearError } from "../../store/recipeSlice";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+
+const schema = yup.object({
+  title: yup.string().required("שם המתכון הוא חובה").min(2, "שם המתכון חייב להכיל לפחות 2 תווים"),
+  description: yup.string().required("תיאור המתכון הוא חובה").min(10, "התיאור חייב להכיל לפחות 10 תווים"),
+  details: yup.string().required("פרטים נוספים הם חובה").min(20, "הפרטים חייבים להכיל לפחות 20 תווים"),
+});
+
+type FormData = yup.InferType<typeof schema>;
 
 const AddRecipe = () => {
   const { state: user } = useContext(UserContext);
-  const titleRef = useRef<HTMLInputElement>(null);
-  const descriptionRef = useRef<HTMLInputElement>(null);
-  const detailsRef = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const dispatch = useDispatch<AppDispatch>();
+  const { loading, error } = useSelector((state: RootState) => state.recipes);
 
-  const handleAddRecipe = async () => {
-    setError(null);
-    setSuccess(null);
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+    resolver: yupResolver(schema)
+  });
+
+  const onSubmit = async (data: FormData) => {
     if (!user.id) {
-      setError("עליך להתחבר כדי להוסיף מתכון.");
-      console.log("Current User:", user);
       return;
     }
 
- 
-
+    dispatch(clearError());
+    
     try {
-        const response = await fetch("http://localhost:3000/api/recipes/add", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "access-control-allow-origin": "*",  // כותרת CORS בצד הלקוח (לא תמיד נדרשת, אבל אפשר להוסיף)
-            },
-            
-            body: JSON.stringify({
-              id:user.id,
-              title: titleRef.current?.value,
-              description: descriptionRef.current?.value,
-              details: detailsRef.current?.value,
-              authorId: user.id,  // אם אתה שולח את ה-authorId
-            }),
-        });
-
-        if (!response.ok) {
-            throw new Error("הוספת המתכון נכשלה.");
-        }
-
-        setSuccess("המתכון נוסף בהצלחה!");
-        titleRef.current!.value = "";
-        descriptionRef.current!.value = "";
-        detailsRef.current!.value = "";
+      await dispatch(addRecipe({
+        ...data,
+        authorId: user.id,
+      })).unwrap();
+      
+      reset();
     } catch (err) {
-        console.error(err);
-        setError("שגיאה בהוספת המתכון.");
+      console.error("Error adding recipe:", err);
     }
-};
+  };
+
+  if (!user.id) {
+    return (
+      <Alert severity="warning">עליך להתחבר כדי להוסיף מתכון.</Alert>
+    );
+  }
 
   return (
     <Box
-    sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 3,
-      padding: 4,
-      maxWidth: 600,
-      margin: '0 auto',
-      backgroundColor: '#f9f9f9',
-      borderRadius: 3,
-      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-    }}
-  >
-    <Typography variant="h4" textAlign="center" gutterBottom>
-      הוסף מתכון חדש
-    </Typography>
-
-    {/* אם יש שגיאה */}
-    {error && <Alert severity="error">{error}</Alert>}
-    
-    {/* אם ההוספה הצליחה */}
-    {success && <Alert severity="success">{success}</Alert>}
-
-    {/* טופס הוספת המתכון */}
-    <TextField
-      inputRef={titleRef}
-      label="שם המתכון"
-      variant="outlined"
-      fullWidth
-      margin="normal"
-      sx={{ backgroundColor: '#ffffff' }}
-    />
-    
-    <TextField
-      inputRef={descriptionRef}
-      label="תיאור המתכון"
-      variant="outlined"
-      fullWidth
-      margin="normal"
-      sx={{ backgroundColor: '#ffffff' }}
-    />
-    
-    <TextField
-      inputRef={detailsRef}
-      label="פרטים נוספים"
-      variant="outlined"
-      fullWidth
-      multiline
-      rows={4}
-      margin="normal"
-      sx={{ backgroundColor: '#ffffff' }}
-      
-    />
-    
-    <Button
-      variant="contained"
-      color="primary"
-      onClick={handleAddRecipe}
+      component="form"
+      onSubmit={handleSubmit(onSubmit)}
       sx={{
-        marginTop: 2,
-        padding: '10px 20px',
-        fontSize: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 3,
+        padding: 4,
+        maxWidth: 600,
+        margin: '0 auto',
+        backgroundColor: '#f9f9f9',
+        borderRadius: 3,
+        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
       }}
     >
-      הוסף מתכון
-    </Button>
-  </Box>
-);
+      <Typography variant="h4" textAlign="center" gutterBottom>
+        הוסף מתכון חדש
+      </Typography>
+
+      {error && <Alert severity="error">{error}</Alert>}
+
+      <TextField
+        {...register("title")}
+        label="שם המתכון"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+        error={!!errors.title}
+        helperText={errors.title?.message}
+        sx={{ backgroundColor: '#ffffff' }}
+      />
+      
+      <TextField
+        {...register("description")}
+        label="תיאור המתכון"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+        error={!!errors.description}
+        helperText={errors.description?.message}
+        sx={{ backgroundColor: '#ffffff' }}
+      />
+      
+      <TextField
+        {...register("details")}
+        label="פרטים נוספים"
+        variant="outlined"
+        fullWidth
+        multiline
+        rows={4}
+        margin="normal"
+        error={!!errors.details}
+        helperText={errors.details?.message}
+        sx={{ backgroundColor: '#ffffff' }}
+      />
+      
+      <Button
+        type="submit"
+        variant="contained"
+        color="primary"
+        disabled={loading}
+        sx={{
+          marginTop: 2,
+          padding: '10px 20px',
+          fontSize: '16px',
+        }}
+      >
+        {loading ? "מוסיף מתכון..." : "הוסף מתכון"}
+      </Button>
+    </Box>
+  );
 };
 
 export default AddRecipe;

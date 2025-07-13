@@ -1,12 +1,13 @@
 import { ChangeEvent, FormEvent, useContext, useState } from "react";
 import axios from "axios";
 import { UserContext } from "./userReducer";
-import { Box, Button, Typography, Modal, TextField } from "@mui/material";
+import { Button } from "@mui/material";
+import UpdateForm from "./UpdateForm";
 
 const UpdateUser = () => {
   const [open, setOpen] = useState(false);
   const { state: user, dispatch: userDispatch } = useContext(UserContext);
-  console.log('Current User update:', user);
+  
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     userDispatch({ type: "UPDATE", data: { [id]: value } });
@@ -37,7 +38,6 @@ const UpdateUser = () => {
 
   return (
     <>
-      {/* כפתור לפתיחת ה-Modal */}
       <Button
         variant="contained"
         color="primary"
@@ -46,75 +46,13 @@ const UpdateUser = () => {
         Update Data
       </Button>
 
-      {/* Modal */}
-      <Modal
+      <UpdateForm
         open={open}
+        user={user}
         onClose={() => setOpen(false)}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          sx={{
-            bgcolor: "background.paper",
-            boxShadow: 24,
-            p: 4,
-            borderRadius: 2,
-            display: "grid",
-            gridTemplateColumns: "1fr 2fr",
-            gap: 2,
-            width: 400,
-          }}
-        >
-          <Typography component="label">First name:</Typography>
-          <TextField
-            value={user.firstName}
-            onChange={handleChange}
-            id="firstName"
-          />
-
-          <Typography component="label">Last name:</Typography>
-          <TextField
-            value={user.lastName}
-            onChange={handleChange}
-            id="lastName"
-          />
-
-          <Typography component="label">Email:</Typography>
-          <TextField
-            value={user.email}
-            onChange={handleChange}
-            id="email"
-          />
-
-          <Typography component="label">Address:</Typography>
-          <TextField
-            value={user.address}
-            onChange={handleChange}
-            id="address"
-          />
-
-          <Typography component="label">Phone:</Typography>
-          <TextField
-            value={user.phone}
-            onChange={handleChange}
-            id="phone"
-          />
-
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            sx={{ gridColumn: "span 2" }}
-          >
-            Save
-          </Button>
-        </Box>
-      </Modal>
+        onSubmit={handleSubmit}
+        onChange={handleChange}
+      />
     </>
   );
 };

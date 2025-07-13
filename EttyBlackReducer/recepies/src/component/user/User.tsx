@@ -1,11 +1,10 @@
-import { useReducer } from "react";
-import userReducer, { initialState, UserContext } from "./userReducer";
+import { useContext } from "react";
+import { UserContext } from "./userReducer";
 import Login from "./Login";
 import UserData from "./UserData";
-import AddRecipe from "../center/AddRecipe";
 
 const User = () => {
-    const [user, dispatchUser] = useReducer(userReducer, initialState);
+    const { state: user } = useContext(UserContext);
 
     return (<>
        {!user.email ? (

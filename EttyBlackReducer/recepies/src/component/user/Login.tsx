@@ -1,13 +1,14 @@
 import { useContext, useRef, useState } from "react";
 import { UserContext } from "./userReducer";
-import { Button, Box, TextField, Typography, Modal, Alert } from "@mui/material";
-import UserProfile from "./UserProfile"; // ייבוא הקומפוננטה החדשה
+import { Button, Box } from "@mui/material";
+import UserProfile from "./UserProfile";
+import LoginModal from "./LoginModal";
 
 const Login = () => {
   const { dispatch: userDispatch } = useContext(UserContext);
   const [isLogin, setIsLogin] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // מצב התחברות
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -17,8 +18,6 @@ const Login = () => {
       ? "http://localhost:3000/api/user/login"
       : "http://localhost:3000/api/user/register";
     try {
-      console.log(url);
-
       const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -46,14 +45,14 @@ const Login = () => {
               password: passwordRef.current?.value || "",
             },
           });
-          setIsLoggedIn(true); // הגדרת התחברות
+          setIsLoggedIn(true);
         } else if (isLogin) {
           const { user } = await response.json();
           userDispatch({
             type: "LOGIN",
             data: user,
           });
-          setIsLoggedIn(true); // הגדרת התחברות
+          setIsLoggedIn(true);
         }
       }
     } catch (error) {
@@ -66,9 +65,12 @@ const Login = () => {
     }
   };
 
+  const handleCloseModal = () => {
+    setIsLogin(false);
+    setIsSignUp(false);
+  };
+
   if (isLoggedIn) {
-  
-    // אם המשתמש מחובר, הצג את קומפוננטת UserProfile
     return <UserProfile />;
   }
 
@@ -83,7 +85,7 @@ const Login = () => {
           top: 0,
           left: 0,
           padding: 2,
-          gap: 2, // מרווח בין הכפתורים
+          gap: 2,
         }}
       >
         <Button variant="contained" color="primary" onClick={() => setIsLogin(true)}>
@@ -94,61 +96,14 @@ const Login = () => {
         </Button>
       </Box>
 
-      {(isLogin || isSignUp) && (
-        <Modal
-          open={isLogin || isSignUp}
-          onClose={() => {
-            setIsLogin(false);
-            setIsSignUp(false);
-          }}
-        >
-          <Box
-            sx={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: 400,
-              bgcolor: "background.paper",
-              boxShadow: 24,
-              p: 4,
-              borderRadius: 2,
-            }}
-          >
-            <Typography variant="h6" component="h2" mb={2}>
-              {isLogin ? "Login" : "Sign Up"}
-            </Typography>
-            <TextField
-              label="Email"
-              type="email"
-              fullWidth
-              margin="normal"
-              inputRef={emailRef}
-            />
-            <TextField
-              label="Password"
-              type="password"
-              fullWidth
-              margin="normal"
-              inputRef={passwordRef}
-            />
-            <Box mt={2} display="flex" justifyContent="space-between">
-              <Button variant="contained" color="primary" onClick={handleLogin}>
-                Send
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  setIsLogin(false);
-                  setIsSignUp(false);
-                }}
-              >
-                Cancel
-              </Button>
-            </Box>
-          </Box>
-        </Modal>
-      )}
+      <LoginModal
+        open={isLogin || isSignUp}
+        isLogin={isLogin}
+        emailRef={emailRef}
+        passwordRef={passwordRef}
+        onClose={handleCloseModal}
+        onSubmit={handleLogin}
+      />
     </>
   );
 };
