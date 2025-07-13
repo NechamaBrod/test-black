@@ -1,6 +1,6 @@
 import { createContext, Dispatch } from "react";
 
-type UserType = {
+export type UserType = {
     avatarUrl: string;
     id: number;
     firstName: string;
